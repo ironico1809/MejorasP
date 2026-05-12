@@ -1,0 +1,136 @@
+.temperature-alert {
+  position: fixed;
+  top: 86px;
+  right: 24px;
+  width: 360px;
+  z-index: 9999;
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  animation: slideAlert 0.3s ease;
+}
+
+.alerta-calor {
+  border-left: 8px solid #ef4444;
+}
+
+.alerta-frio {
+  border-left: 8px solid #3b82f6;
+}
+
+.temperature-alert-icon {
+  display: flex;
+  align-items: flex-start;
+  color: #f59e0b;
+  margin-top: 2px;
+}
+
+.temperature-alert-content {
+  flex: 1;
+}
+
+.temperature-alert-content h3 {
+  margin: 0 0 6px 0;
+  font-size: 17px;
+  color: #111827;
+}
+
+.temperature-alert-content p {
+  margin: 0 0 6px 0;
+  color: #374151;
+  font-size: 14px;
+}
+
+.temperature-alert-content span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.temperature-alert-content small {
+  display: block;
+  margin-top: 8px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.temperature-alert-close {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  padding: 6px;
+  height: 30px;
+  width: 30px;
+  cursor: pointer;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.temperature-alert-close:hover {
+  background: #e5e7eb;
+}
+
+@keyframes slideAlert {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .temperature-alert {
+    top: 76px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}
+
+.alerta-multiple {
+  border-left: 8px solid #f59e0b;
+}
+
+.temperature-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.temperature-alert-item {
+  padding: 9px 10px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.temperature-alert-item strong {
+  color: #111827;
+}
+
+.temperature-alert-item span {
+  color: #374151;
+}
+
+.item-calor {
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+}
+
+.item-frio {
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+}

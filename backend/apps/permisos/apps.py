@@ -1,0 +1,8 @@
+"""Configuración de Django para la app `permisos`."""
+
+from django.apps import AppConfig
+
+
+class PermisosConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.permisos'

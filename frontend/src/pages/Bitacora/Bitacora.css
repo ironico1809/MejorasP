@@ -1,0 +1,103 @@
+.bita-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f9fafb;
+  font-family: "Poppins", sans-serif;
+}
+
+.bita-main {
+  flex: 1;
+  padding: 32px;
+  transition: margin-left 0.3s ease;
+  min-width: 0;
+}
+
+.bita-search {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+  width: fit-content;
+  gap: 10px;
+}
+
+.bita-search input {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  width: 250px;
+  min-width: 0;
+  font-family: "Poppins", sans-serif;
+}
+
+.bita-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.bita-loading {
+  color: #9ca3af;
+  padding: 20px;
+  margin: 0;
+}
+
+.bita-tableWrap {
+  overflow-x: auto;
+}
+
+.bita-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.bita-table thead tr {
+  background: #f8fafc;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.bita-table th {
+  padding: 16px;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bita-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.bita-icon {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@media (max-width: 900px) {
+  .bita-main {
+    padding: 18px;
+  }
+
+  .bita-search {
+    width: 100%;
+  }
+
+  .bita-search input {
+    width: 100%;
+  }
+
+  .bita-table th,
+  .bita-table td {
+    padding: 12px;
+  }
+}

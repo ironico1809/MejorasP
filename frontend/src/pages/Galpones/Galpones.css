@@ -1,0 +1,267 @@
+.galp-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f9fafb;
+  font-family: "Poppins", sans-serif;
+}
+
+.galp-main {
+  flex: 1;
+  padding: 40px;
+  transition: margin-left 0.3s ease;
+  min-width: 0;
+}
+
+.galp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.galp-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1c1c1c;
+  margin: 0;
+}
+
+.galp-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+}
+
+.galp-addBtn {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  font-family: "Poppins", sans-serif;
+  white-space: nowrap;
+}
+
+.galp-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.galp-search {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  padding: 10px 16px;
+  border-radius: 12px;
+  width: 300px;
+  margin-bottom: 24px;
+  border: 1px solid #f3f4f6;
+  gap: 10px;
+}
+
+.galp-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.galp-tableWrap {
+  overflow-x: auto;
+}
+
+.galp-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.galp-table thead tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.galp-table th {
+  padding: 16px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.galp-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: #1c1c1c;
+  border-bottom: 1px solid #f8fafc;
+  vertical-align: top;
+}
+
+.galp-muted {
+  color: #9ca3af;
+}
+
+.galp-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.galp-actionBtn {
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.galp-actionBtn--blue {
+  background: #2563eb;
+}
+
+.galp-actionBtn--amber {
+  background: #f59e0b;
+}
+
+.galp-actionBtn--red {
+  background: #dc2626;
+}
+
+.galp-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.galp-footerText {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.galp-pagination {
+  display: flex;
+  gap: 8px;
+}
+
+.galp-pageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.galp-pageBtn--active {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #1c1c1c;
+}
+
+.galp-selectWrap {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0 16px;
+}
+
+.galp-select {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 14px 0;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  font-family: "Poppins", sans-serif;
+}
+
+.galp-detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 16px;
+}
+
+.galp-detailLabel {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.galp-detailValue {
+  font-size: 14px;
+  color: #1c1c1c;
+  font-weight: 600;
+  text-align: right;
+}
+
+.galp-dangerText {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 0;
+}
+
+.galp-deleteActions {
+  display: flex;
+  gap: 12px;
+}
+
+.galp-cancelBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+}
+
+.galp-deleteBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+}
+
+@media (max-width: 900px) {
+  .galp-main {
+    padding: 18px;
+  }
+
+  .galp-search {
+    width: 100%;
+  }
+
+  .galp-table th,
+  .galp-table td {
+    padding: 12px;
+  }
+}

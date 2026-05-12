@@ -1,0 +1,35 @@
+# === Secrets / env ===
+.env.*
+backend/.env
+frontend/.env
+
+# === Python / Django ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.log
+*.sqlite3
+
+# Django generated
+staticfiles/
+media/
+
+# Virtualenvs
+venv/
+.venv/
+backend/venv/
+
+# === Node / Vite ===
+node_modules/
+dist/
+
+# === Editor / OS ===
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
