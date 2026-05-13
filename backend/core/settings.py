@@ -51,7 +51,7 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("SECRET_KEY environment variable is required when DEBUG=False")
 
 
-ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS") if not DEBUG else []
+ALLOWED_HOSTS = ['*']
 
 
 
