@@ -1,14 +1,46 @@
 from django.db import transaction
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.core.mixins import TenantSafeView
 from apps.bitacora.utils import registrar_evento
-from apps.insumos.models import MovimientoAlmacen, Insumo, ControlSanitario
-from apps.sanitario.serializers import ControlSanitarioSerializer
+
+from apps.insumos.models import (
+    MovimientoAlmacen,
+    Insumo,
+    ControlSanitario,
+)
+
+from apps.lotes.models import Lote
+
+from apps.sanitario.models import (
+    RegistroEnfermedadLote,
+    AlertaSanitaria,
+)
+
+from apps.sanitario.serializers import (
+    ControlSanitarioSerializer,
+    RegistroEnfermedadLoteSerializer,
+    AlertaSanitariaSerializer,
+)
+
+from apps.sanitario.services import (
+    evaluar_alerta_por_enfermedad,
+    evaluar_alerta_por_mortandad_post_enfermedad,
+    evaluar_riesgo_sanitario_lote,
+    evaluar_riesgo_sanitario_general,
+)
+
+
+
+
+
+
 
 
 class AplicacionesSanitariasView(TenantSafeView):
@@ -248,3 +280,249 @@ class AplicacionSanitariaDetailView(TenantSafeView):
 
     def put(self, request, pk):
         return self.patch(request, pk)
+
+
+
+class RegistroEnfermedadLoteView(APIView):
+    """
+    Endpoint para registrar y consultar enfermedades por lote.
+
+    Aunque este endpoint apoya al CU15, lo necesitamos para que el CU17
+    tenga datos de enfermedades y pueda generar alertas sanitarias.
+
+    GET:
+    Lista registros de enfermedad.
+
+    POST:
+    Registra enfermedad y evalúa automáticamente si debe generar alerta.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = RegistroEnfermedadLote.objects.select_related(
+            'lote',
+            'lote__galpon'
+        ).all()
+
+        lote_id = request.query_params.get('lote')
+        estado = request.query_params.get('estado')
+
+        if lote_id:
+            queryset = queryset.filter(lote_id=lote_id)
+
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        return Response(
+            RegistroEnfermedadLoteSerializer(queryset, many=True).data,
+            status=status.HTTP_200_OK
+        )
+
+    def post(self, request):
+        serializer = RegistroEnfermedadLoteSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = getattr(request, 'user', None)
+        empresa_id = getattr(user, 'empresa_id', None) or 1
+
+        registro = serializer.save(empresa_id=empresa_id)
+
+        # Evaluamos automáticamente las reglas del CU17.
+        alertas_generadas = []
+        alertas_generadas += evaluar_alerta_por_enfermedad(registro)
+        alertas_generadas += evaluar_alerta_por_mortandad_post_enfermedad(registro)
+
+        registrar_evento(
+            request,
+            accion='crear',
+            modulo='sanitario',
+            entidad='RegistroEnfermedadLote',
+            entidad_id=registro.id,
+            entidad_nombre=f"{registro.nombre_enfermedad} - Lote {registro.lote_id}",
+            detalle=request.data,
+            usuario=request.user
+        )
+
+        return Response(
+            {
+                'registro': RegistroEnfermedadLoteSerializer(registro).data,
+                'alertas_generadas': AlertaSanitariaSerializer(
+                    alertas_generadas,
+                    many=True
+                ).data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+class AlertasSanitariasView(APIView):
+    """
+    Endpoint para listar alertas sanitarias.
+
+    GET /sanitario/alertas/
+
+    Filtros opcionales:
+    - estado
+    - lote
+    - tipo
+    - nivel
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = AlertaSanitaria.objects.select_related(
+            'lote',
+            'lote__galpon',
+            'registro_enfermedad',
+            'insumo',
+            'atendida_por'
+        ).all()
+
+        estado = request.query_params.get('estado')
+        lote_id = request.query_params.get('lote')
+        tipo = request.query_params.get('tipo')
+        nivel = request.query_params.get('nivel')
+
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        if lote_id:
+            queryset = queryset.filter(lote_id=lote_id)
+
+        if tipo:
+            queryset = queryset.filter(tipo_alerta=tipo)
+
+        if nivel:
+            queryset = queryset.filter(nivel=nivel)
+
+        return Response(
+            AlertaSanitariaSerializer(queryset, many=True).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class EvaluarAlertasSanitariasView(APIView):
+    """
+    Endpoint para evaluar riesgos sanitarios manualmente.
+
+    POST /sanitario/alertas/evaluar/
+
+    Si se envía lote_id:
+    evalúa solo ese lote.
+
+    Si no se envía lote_id:
+    evalúa todos los registros activos y stock de medicamentos.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        lote_id = request.data.get('lote_id')
+
+        user = getattr(request, 'user', None)
+        empresa_id = getattr(user, 'empresa_id', None) or 1
+
+        if lote_id:
+            try:
+                lote = Lote.objects.get(id_lote=lote_id)
+            except Lote.DoesNotExist:
+                return Response(
+                    {'lote_id': 'No existe un lote con ese ID.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            alertas = evaluar_riesgo_sanitario_lote(lote)
+        else:
+            alertas = evaluar_riesgo_sanitario_general(empresa_id=empresa_id)
+
+        registrar_evento(
+            request,
+            accion='evaluar',
+            modulo='sanitario',
+            entidad='AlertaSanitaria',
+            entidad_id=None,
+            entidad_nombre='Evaluación de riesgo sanitario',
+            detalle=request.data,
+            usuario=request.user
+        )
+
+        return Response(
+            {
+                'mensaje': 'Evaluación sanitaria realizada correctamente.',
+                'cantidad_alertas': len(alertas),
+                'alertas': AlertaSanitariaSerializer(alertas, many=True).data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class CambiarEstadoAlertaSanitariaView(APIView):
+    """
+    Endpoint para marcar una alerta como Atendida o Resuelta.
+
+    PATCH /sanitario/alertas/<id>/estado/
+
+    Body:
+    {
+        "estado": "Atendida"
+    }
+
+    o
+
+    {
+        "estado": "Resuelta"
+    }
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, alerta_id):
+        nuevo_estado = request.data.get('estado')
+
+        estados_validos = ['Pendiente', 'Atendida', 'Resuelta']
+
+        if nuevo_estado not in estados_validos:
+            return Response(
+                {
+                    'estado': f'Estado inválido. Use uno de estos: {estados_validos}'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            alerta = AlertaSanitaria.objects.get(id=alerta_id)
+        except AlertaSanitaria.DoesNotExist:
+            return Response(
+                {'detalle': 'No existe una alerta sanitaria con ese ID.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        alerta.estado = nuevo_estado
+
+        if nuevo_estado in ['Atendida', 'Resuelta']:
+            alerta.atendida_por = request.user
+            alerta.fecha_atencion = timezone.now()
+
+        alerta.save()
+
+        registrar_evento(
+            request,
+            accion='actualizar',
+            modulo='sanitario',
+            entidad='AlertaSanitaria',
+            entidad_id=alerta.id,
+            entidad_nombre=alerta.titulo,
+            detalle={
+                'nuevo_estado': nuevo_estado
+            },
+            usuario=request.user
+        )
+
+        return Response(
+            AlertaSanitariaSerializer(alerta).data,
+            status=status.HTTP_200_OK
+        )

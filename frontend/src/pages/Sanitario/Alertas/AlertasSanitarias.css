@@ -1,0 +1,247 @@
+.alertas-sanitarias-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.alerta-resumen-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 6px solid #f59e0b;
+}
+
+.alerta-resumen-card span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.alerta-resumen-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 30px;
+  color: #0f172a;
+}
+
+.alerta-resumen-card svg {
+  color: #b45309;
+}
+
+.alertas-sanitarias-filtros {
+  min-width: 260px;
+}
+
+.alertas-sanitarias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 18px;
+  padding: 16px;
+}
+
+.alerta-sanitaria-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  border-left: 7px solid #f59e0b;
+}
+
+.alerta-sanitaria-critica {
+  border-left-color: #dc2626;
+}
+
+.alerta-sanitaria-alta {
+  border-left-color: #f97316;
+}
+
+.alerta-sanitaria-media {
+  border-left-color: #eab308;
+}
+
+.alerta-sanitaria-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.alerta-sanitaria-card-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 17px;
+}
+
+.alerta-sanitaria-card-header span {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.alerta-sanitaria-card-header strong {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.alerta-sanitaria-card p {
+  color: #475569;
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+.alerta-sanitaria-detalle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.alerta-sanitaria-detalle div {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.alerta-sanitaria-detalle span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alerta-sanitaria-detalle strong {
+  display: block;
+  color: #0f172a;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.alerta-sanitaria-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-alerta-atendida,
+.btn-alerta-resuelta {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 13px;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.btn-alerta-atendida {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-alerta-resuelta {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-alerta-atendida:hover {
+  background: #15803d;
+}
+
+.btn-alerta-resuelta:hover {
+  background: #1d4ed8;
+}
+
+.alerta-sanitaria-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.alerta-sanitaria-ok {
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.inv-btn-secondary {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 11px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inv-btn-secondary:hover {
+  background: #d97706;
+}
+
+@media (max-width: 800px) {
+  .alertas-sanitarias-resumen {
+    grid-template-columns: 1fr;
+  }
+
+  .alertas-sanitarias-grid {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .alerta-sanitaria-detalle {
+    grid-template-columns: 1fr;
+  }
+}
+.filtro-estado-alertas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 260px;
+}
+
+.filtro-estado-alertas label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.filtro-estado-alertas select {
+  width: 100%;
+  height: 52px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0 14px;
+  background: white;
+  font-size: 15px;
+  color: #0f172a;
+  outline: none;
+}
+
+.filtro-estado-alertas select:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
