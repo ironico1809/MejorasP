@@ -138,6 +138,7 @@ class ControlSanitario(models.Model):
     responsable = models.CharField(max_length=200, blank=True, null=True)
     observacion = models.TextField(blank=True, null=True)
     fecha_registro = models.DateTimeField(auto_now_add=True, db_default=Now())
+    estado_enfermedad = models.CharField(max_length=50, default='Tratamiento', blank=True, null=True)
 
     # ── SaaS: tenant ────────────────────────────────────────────────────────
     empresa = models.ForeignKey(

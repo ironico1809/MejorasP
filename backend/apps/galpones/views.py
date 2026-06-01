@@ -15,7 +15,7 @@ from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, ProtectedError
 from django.db.models.functions import Coalesce
 
 from apps.core.mixins import TenantSafeView
@@ -163,8 +163,14 @@ class GalponDetailView(TenantSafeView):
             detalle={'nombre': getattr(galpon, 'nombre', None)},
             usuario=request.user,
         )
-        galpon.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            galpon.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError:
+            return Response(
+                {'detail': 'No puedes eliminar este galpón porque tiene lotes registrados. Elimina o reasigna los lotes primero.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class GalponEstadoListView(TenantSafeView):

@@ -21,6 +21,7 @@ import Movimientos from "./pages/Inventario/Movimientos/Movimientos";
 import RegistroEnfermedad from "./pages/Sanitario/Enfermedades/RegistroEnfermedad";
 import RegistroSanitario from "./pages/Sanitario/Registro/RegistroSanitario";
 import HistorialClinico from "./pages/Sanitario/Historial/HistorialClinico";
+import AlertasSanitarias from "./pages/Sanitario/Alertas/AlertasSanitarias";
 import Temperatura from "./pages/Temperatura/Temperatura";
 import PrediccionTemperatura from "./pages/PrediccionTemperatura/PrediccionTemperatura";
 import TemperatureAlert from "./components/TemperatureAlert";
@@ -135,6 +136,7 @@ function App() {
         <Route path="/sanitario/registro" element={<ProtectedRoute><RegistroSanitario /></ProtectedRoute>} />
         <Route path="/sanitario/historial" element={<ProtectedRoute><HistorialClinico /></ProtectedRoute>} />
         <Route path="/sanitario/enfermedades" element={<ProtectedRoute><RegistroEnfermedad /></ProtectedRoute>} />
+        <Route path="/sanitario/alertas" element={<ProtectedRoute><AlertasSanitarias /></ProtectedRoute>} />
         <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
         <Route path="/mortandad" element={<ProtectedRoute><Mortandad /></ProtectedRoute>} />
         <Route path="/estado" element={<ProtectedRoute><Estado /></ProtectedRoute>} />

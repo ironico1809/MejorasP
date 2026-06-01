@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Stethoscope } from "lucide-react";
+import { Plus, Stethoscope, Edit, Trash2 } from "lucide-react";
 import Sidebar from "../../../components/Sidebar";
 import Topbar from "../../../components/Topbar";
 import Modal from "../../../components/Modal";
@@ -15,6 +15,11 @@ function RegistroSanitario() {
   const isMobile = useIsMobile();
 
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [lotes, setLotes] = useState([]);
@@ -22,7 +27,7 @@ function RegistroSanitario() {
   const [aplicaciones, setAplicaciones] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
 
-  const [form, setForm] = useState({
+  const defaultForm = {
     lote: "",
     insumo: "",
     tipo_tratamiento: "Vacuna",
@@ -31,7 +36,10 @@ function RegistroSanitario() {
     fecha_aplicacion: new Date().toISOString().split("T")[0],
     responsable: "",
     observacion: "",
-  });
+    estado_enfermedad: "Preventivo"
+  };
+
+  const [form, setForm] = useState(defaultForm);
 
   useEffect(() => {
     try {
@@ -44,11 +52,10 @@ function RegistroSanitario() {
         }));
       }
     } catch {
-      // Si el localStorage está corrupto/no es JSON válido, seguimos sin bloquear.
+      // Ignorar errores
     }
     fetchData();
 
-    // Polling: refresca datos sin interrumpir al usuario
     const id = setInterval(() => fetchData({ silent: true }), 15000);
     return () => clearInterval(id);
   }, []);
@@ -81,6 +88,8 @@ function RegistroSanitario() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setSaving(true);
+    setFormError("");
     try {
       await api.post("/sanitario/aplicaciones/", {
         lote: Number(form.lote),
@@ -91,21 +100,91 @@ function RegistroSanitario() {
         fecha_aplicacion: form.fecha_aplicacion,
         responsable: form.responsable,
         observacion: form.observacion,
+        estado_enfermedad: form.estado_enfermedad,
       });
       setShowModal(false);
-      setForm({
-        lote: "",
-        insumo: "",
-        tipo_tratamiento: "Vacuna",
-        dosis: "",
-        unidad_dosis: "ml",
-        fecha_aplicacion: new Date().toISOString().split("T")[0],
-        responsable: "",
-        observacion: "",
-      });
+      setForm(defaultForm);
       fetchData();
     } catch (e) {
+      setFormError(
+        e.response?.data?.detail ||
+          e.response?.data?.dosis?.[0] ||
+          e.response?.data?.lote?.[0] ||
+          "Error al registrar aplicación sanitaria"
+      );
       console.error("Error al registrar aplicación sanitaria", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditClick = (item) => {
+    setEditingItem(item);
+    setForm({
+      lote: item.lote,
+      insumo: item.insumo || "",
+      tipo_tratamiento: item.tipo_tratamiento || "Vacuna",
+      dosis: item.dosis || "",
+      unidad_dosis: item.unidad_dosis || "ml",
+      fecha_aplicacion: item.fecha_aplicacion || "",
+      responsable: item.responsable || "",
+      observacion: item.observacion || "",
+      estado_enfermedad: item.estado_enfermedad || "Preventivo"
+    });
+    setFormError("");
+    setShowEditModal(true);
+  };
+
+  const submitEdit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setFormError("");
+    try {
+      await api.patch(`/sanitario/aplicaciones/${editingItem.id}/`, {
+        lote: Number(form.lote),
+        insumo: form.insumo ? Number(form.insumo) : null,
+        tipo_tratamiento: form.tipo_tratamiento,
+        dosis: Number(form.dosis),
+        unidad_dosis: form.unidad_dosis,
+        fecha_aplicacion: form.fecha_aplicacion,
+        responsable: form.responsable,
+        observacion: form.observacion,
+        estado_enfermedad: form.estado_enfermedad,
+      });
+      setShowEditModal(false);
+      setEditingItem(null);
+      setForm(defaultForm);
+      fetchData();
+    } catch (e) {
+      setFormError(
+        e.response?.data?.detail ||
+          e.response?.data?.dosis?.[0] ||
+          e.response?.data?.lote?.[0] ||
+          "Error al editar registro sanitario"
+      );
+      console.error("Error al editar registro sanitario", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setSaving(true);
+    setFormError("");
+    try {
+      await api.delete(`/sanitario/aplicaciones/${editingItem.id}/`);
+      setShowDeleteModal(false);
+      setEditingItem(null);
+      fetchData();
+    } catch (e) {
+      setFormError(
+        e.response?.data?.detail ||
+          e.response?.data?.error ||
+          "Error al eliminar el registro."
+      );
+      console.error("Error al eliminar el registro:", e);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -125,6 +204,127 @@ function RegistroSanitario() {
       new Set((aplicaciones || []).map((a) => a.unidad_dosis).filter(Boolean)),
     );
   }, [aplicaciones]);
+
+  const formFields = (isEdit = false) => (
+    <>
+      <ComboBox
+        label="Lote de Aves"
+        value={form.lote}
+        onChange={(val) => setForm({ ...form, lote: val })}
+        options={lotes
+          .filter((l) => isEdit || l.estado !== "Finalizado") // Al editar permitimos ver el lote aunque esté finalizado (si ya lo tenía)
+          .map((l) => ({
+            value: l.id_lote,
+            label: `Lote ${l.id_lote} - ${l.raza_tipo || "Sin raza"} (${l.estado})`,
+        }))}
+        placeholder="Seleccionar lote..."
+        required
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <ComboBox
+          label="Insumo Utilizado"
+          value={form.insumo}
+          onChange={(val) => setForm({ ...form, insumo: val })}
+          options={insumos.map((i) => ({
+            value: i.id_insumo,
+            label: i.nombre,
+          }))}
+          placeholder="Ninguno / Genérico"
+        />
+
+        <ComboBox
+          label="Tipo de Tratamiento"
+          value={form.tipo_tratamiento}
+          onChange={(val) => setForm({ ...form, tipo_tratamiento: val })}
+          options={[
+            { value: "Vacuna", label: "Vacuna" },
+            { value: "Medicamento", label: "Medicamento" },
+            { value: "Vitamina", label: "Vitamina" },
+            { value: "Antibiotico", label: "Antibiótico" },
+            { value: "Desinfectante", label: "Desinfectante" },
+            { value: "Otro", label: "Otro" },
+          ]}
+          placeholder="Seleccionar tipo..."
+          required
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <InputField
+          label="Cantidad / Dosis"
+          type="number"
+          step="0.01"
+          placeholder="0.00"
+          value={form.dosis}
+          onChange={(e) => setForm({ ...form, dosis: e.target.value })}
+          required
+        />
+
+        <ComboBox
+          label="Unidad (ej: ml, gr, dosis)"
+          value={form.unidad_dosis}
+          onChange={(val) => setForm({ ...form, unidad_dosis: val })}
+          allowCustom={true}
+          options={[
+            { value: "ml", label: "ml" },
+            { value: "gr", label: "gr" },
+            { value: "mg", label: "mg" },
+            { value: "dosis", label: "dosis" },
+            { value: "gotas", label: "gotas" },
+            ...unidadesUnicas.map((u) => ({ value: u, label: u })),
+          ].filter((v, i, a) => a.findIndex((t) => t.value === v.value) === i)}
+          placeholder="Escribe o selecciona..."
+          required
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <InputField
+          label="Fecha de Aplicación"
+          type="date"
+          value={form.fecha_aplicacion}
+          onChange={(e) => setForm({ ...form, fecha_aplicacion: e.target.value })}
+          required
+        />
+        <ComboBox
+          label="Estado Enfermedad"
+          value={form.estado_enfermedad}
+          onChange={(val) => setForm({ ...form, estado_enfermedad: val })}
+          allowCustom={true}
+          options={[
+            { value: "Preventivo", label: "Preventivo" },
+            { value: "En Tratamiento", label: "En Tratamiento" },
+            { value: "Recuperado", label: "Recuperado" },
+            { value: "Pendiente", label: "Pendiente" },
+          ]}
+          placeholder="Seleccionar estado..."
+        />
+      </div>
+
+      <ComboBox
+        label="Personal Responsable"
+        value={form.responsable}
+        onChange={(val) => setForm({ ...form, responsable: val })}
+        allowCustom={true}
+        options={[
+          ...usuarios.map((u) => ({
+            value: u.nom_usuario,
+            label: u.nom_usuario,
+          })),
+          ...responsablesUnicos.map((r) => ({ value: r, label: r })),
+        ].filter((v, i, a) => a.findIndex((t) => t.value === v.value) === i)}
+        placeholder="Nombre del encargado"
+      />
+
+      <InputField
+        label="Observaciones Adicionales"
+        placeholder="Detalles sobre la aplicación..."
+        value={form.observacion}
+        onChange={(e) => setForm({ ...form, observacion: e.target.value })}
+      />
+    </>
+  );
 
   return (
     <div className="inv-layout">
@@ -156,7 +356,11 @@ function RegistroSanitario() {
           <div className="inv-header-actions">
             <button
               className="inv-btn-primary"
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setForm(defaultForm);
+                setFormError("");
+                setShowModal(true);
+              }}
             >
               <Plus size={16} /> Registrar aplicación
             </button>
@@ -176,35 +380,67 @@ function RegistroSanitario() {
                 <tr>
                   <th>Fecha</th>
                   <th>Lote</th>
-                  <th>Tipo</th>
-                  <th>Insumo</th>
+                  <th>Tipo / Insumo</th>
+                  <th>Estado</th>
                   <th>Dosis</th>
+                  <th>Responsable</th>
+                  <th style={{ textAlign: "right" }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="inv-empty">
-                      Cargando...
-                    </td>
+                    <td colSpan={7} className="inv-empty">Cargando...</td>
                   </tr>
                 ) : last10.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="inv-empty">
-                      No hay registros.
-                    </td>
+                    <td colSpan={7} className="inv-empty">No hay registros.</td>
                   </tr>
                 ) : (
                   last10.map((a) => (
                     <tr key={a.id}>
-                      <td style={{ fontSize: 11 }}>{a.fecha_aplicacion}</td>
+                      <td style={{ fontSize: 12 }}>{a.fecha_aplicacion}</td>
+                      <td><strong>Lote {a.lote}</strong></td>
                       <td>
-                        <strong>{a.lote}</strong>
+                        {a.tipo_tratamiento}
+                        <br />
+                        <span style={{ fontSize: "0.85em", color: "#666" }}>{a.insumo_nombre || "-"}</span>
                       </td>
-                      <td>{a.tipo_tratamiento}</td>
-                      <td>{a.insumo_nombre || "-"}</td>
                       <td>
-                        <strong>{a.dosis}</strong> {a.unidad_dosis}
+                        <span style={{ 
+                          padding: "2px 8px", 
+                          borderRadius: "12px", 
+                          fontSize: "0.8em", 
+                          backgroundColor: "#f0fdf4", 
+                          color: "#16a34a",
+                          border: "1px solid #bbf7d0" 
+                        }}>
+                          {a.estado_enfermedad || "Preventivo"}
+                        </span>
+                      </td>
+                      <td><strong>{a.dosis}</strong> {a.unidad_dosis}</td>
+                      <td>{a.responsable || "-"}</td>
+                       <td style={{ textAlign: "right" }}>
+                        <div className="btn-action-group">
+                          <button
+                            onClick={() => handleEditClick(a)}
+                            className="btn-action btn-action--edit"
+                            title="Editar"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingItem(a);
+                              setFormError("");
+                              setShowDeleteModal(true);
+                            }}
+                            className="btn-action btn-action--delete"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -215,126 +451,83 @@ function RegistroSanitario() {
         </section>
       </main>
 
+      {/* Modal Crear */}
       {showModal && (
-        <Modal
-          titulo="Registrar aplicación"
-          onClose={() => setShowModal(false)}
-        >
+        <Modal titulo="Registrar Aplicación" onClose={() => setShowModal(false)}>
           <form className="inv-form" onSubmit={handleCreate}>
-            <ComboBox
-              label="Lote de Aves"
-              value={form.lote}
-              onChange={(val) => setForm({ ...form, lote: val })}
-              options={lotes.map((l) => ({
-                value: l.id_lote,
-                label: `Lote ${l.id_lote} - ${l.raza} (${l.estado})`,
-              }))}
-              placeholder="Seleccionar lote..."
-              required
-            />
+            {formFields(false)}
+            {formError && (
+              <p style={{ color: "#dc2626", fontSize: "13px", margin: "10px 0 0 0", fontWeight: "600" }}>
+                ⚠️ {formError}
+              </p>
+            )}
+            <Button text="Guardar" icon={<Plus size={18} />} loading={saving} />
+          </form>
+        </Modal>
+      )}
 
-            <div
+      {/* Modal Editar */}
+      {showEditModal && (
+        <Modal titulo="Editar Aplicación" onClose={() => setShowEditModal(false)}>
+          <form className="inv-form" onSubmit={submitEdit}>
+            {formFields(true)}
+            {formError && (
+              <p style={{ color: "#dc2626", fontSize: "13px", margin: "10px 0 0 0", fontWeight: "600" }}>
+                ⚠️ {formError}
+              </p>
+            )}
+            <Button text="Actualizar" icon={<Edit size={18} />} loading={saving} />
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal Eliminar */}
+      {showDeleteModal && (
+        <Modal
+          titulo="Eliminar Aplicación"
+          onClose={() => {
+            setShowDeleteModal(false);
+            setEditingItem(null);
+          }}
+        >
+          <div style={{ padding: "10px 0 20px" }}>
+            <p style={{ color: "#4b5563", fontSize: 14 }}>
+              ¿Estás seguro de eliminar el registro sanitario del lote <strong>Lote {editingItem?.lote}</strong>?
+            </p>
+            <p
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
+                color: "#ef4444",
+                fontSize: 12,
+                marginTop: 8,
+                fontWeight: 600,
               }}
             >
-              <ComboBox
-                label="Insumo Utilizado"
-                value={form.insumo}
-                onChange={(val) => setForm({ ...form, insumo: val })}
-                options={insumos.map((i) => ({
-                  value: i.id_insumo,
-                  label: i.nombre,
-                }))}
-                placeholder="Ninguno / Genérico"
-              />
-
-              <ComboBox
-                label="Tipo de Tratamiento"
-                value={form.tipo_tratamiento}
-                onChange={(val) => setForm({ ...form, tipo_tratamiento: val })}
-                options={[
-                  { value: "Vacuna", label: "Vacuna" },
-                  { value: "Medicamento", label: "Medicamento" },
-                  { value: "Vitamina", label: "Vitamina" },
-                  { value: "Antibiotico", label: "Antibiótico" },
-                  { value: "Desinfectante", label: "Desinfectante" },
-                  { value: "Otro", label: "Otro" },
-                ]}
-                placeholder="Seleccionar tipo..."
-                required
-              />
-            </div>
-
-            <InputField
-              label="Fecha de Aplicación"
-              type="date"
-              value={form.fecha_aplicacion}
-              onChange={(e) =>
-                setForm({ ...form, fecha_aplicacion: e.target.value })
-              }
-              required
-            />
-
-            <InputField
-              label="Cantidad / Dosis"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={form.dosis}
-              onChange={(e) => setForm({ ...form, dosis: e.target.value })}
-              required
-            />
-
-            <ComboBox
-              label="Unidad (ej: ml, gr, dosis)"
-              value={form.unidad_dosis}
-              onChange={(val) => setForm({ ...form, unidad_dosis: val })}
-              allowCustom={true}
-              options={[
-                { value: "ml", label: "ml" },
-                { value: "gr", label: "gr" },
-                { value: "mg", label: "mg" },
-                { value: "dosis", label: "dosis" },
-                { value: "gotas", label: "gotas" },
-                ...unidadesUnicas.map((u) => ({ value: u, label: u })),
-              ].filter(
-                (v, i, a) => a.findIndex((t) => t.value === v.value) === i,
-              )}
-              placeholder="Escribe o selecciona..."
-              required
-            />
-
-            <ComboBox
-              label="Personal Responsable"
-              value={form.responsable}
-              onChange={(val) => setForm({ ...form, responsable: val })}
-              allowCustom={true}
-              options={[
-                ...usuarios.map((u) => ({
-                  value: u.nom_usuario,
-                  label: u.nom_usuario,
-                })),
-                ...responsablesUnicos.map((r) => ({ value: r, label: r })),
-              ].filter(
-                (v, i, a) => a.findIndex((t) => t.value === v.value) === i,
-              )}
-              placeholder="Nombre del encargado"
-            />
-
-            <InputField
-              label="Observaciones Adicionales"
-              placeholder="Detalles sobre la aplicación..."
-              value={form.observacion}
-              onChange={(e) =>
-                setForm({ ...form, observacion: e.target.value })
-              }
-            />
-
-            <Button text="Guardar" icon={<Plus size={18} />} />
-          </form>
+              Esta acción no se puede deshacer y devolverá el stock utilizado del insumo al inventario.
+            </p>
+          </div>
+          {formError && (
+            <p style={{ color: "#dc2626", fontSize: "12px", margin: "0 0 12px 0", fontWeight: "600" }}>
+              ⚠️ {formError}
+            </p>
+          )}
+          <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+            <button
+              className="inv-btn-ghost"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setEditingItem(null);
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              className="inv-btn-danger"
+              onClick={confirmDelete}
+              disabled={saving}
+            >
+              {saving ? "Eliminando..." : "Sí, eliminar"}
+            </button>
+          </div>
         </Modal>
       )}
     </div>

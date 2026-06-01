@@ -161,4 +161,4 @@ function TemperatureAlert() {
   );
 }
 
-export default TemperatureAlert;
+export default TemperatureAlert;  

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+/*import { useState, useEffect } from "react";
 import { Bird, Skull, Package, Thermometer, Zap, AlertCircle, Brain, TrendingUp } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
@@ -7,7 +7,54 @@ import AlertItem from "../../components/AlertItem";
 import api from "../../api/axios";
 import useIsMobile from "../../hooks/useIsMobile";
 
+
+import { useEffect, useState } from "react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/axios";*/
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+import {
+  Bird,
+  Skull,
+  Package,
+  Thermometer,
+  Zap,
+  AlertCircle,
+  AlertTriangle,
+  ShieldAlert,
+  Brain,
+  TrendingUp,
+} from "lucide-react";
+
+import Sidebar from "../../components/Sidebar";
+import Topbar from "../../components/Topbar";
+import StatCard from "../../components/StatCard";
+import AlertItem from "../../components/AlertItem";
+import api from "../../api/axios";
+import useIsMobile from "../../hooks/useIsMobile";
+
+
 function Dashboard() {
+  const navigate = useNavigate();
+
+/*
+  alertasSanitarias:
+  Guarda las alertas sanitarias pendientes que vienen del backend.
+
+  Endpoint usado:
+  GET /sanitario/alertas/?estado=Pendiente
+*/
+const [alertasSanitarias, setAlertasSanitarias] = useState([]);
+
+/*
+  cargandoAlertas:
+  Sirve para controlar si el Dashboard está cargando las alertas sanitarias.
+*/
+const [cargandoAlertas, setCargandoAlertas] = useState(false);
+
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
@@ -21,9 +68,63 @@ function Dashboard() {
   });
   const [predicciones, setPredicciones] = useState([]);
 
+  const cargarAlertasSanitarias = async () => {
+  try {
+    setCargandoAlertas(true);
+
+    /*
+      Pedimos solo alertas sanitarias pendientes.
+      Estas son las que el administrador debe revisar.
+    */
+    const respuesta = await api.get("/sanitario/alertas/", {
+      params: {
+        estado: "Pendiente",
+      },
+    });
+
+    /*
+      Si el backend devuelve una lista, la guardamos.
+      Si no devuelve lista, dejamos arreglo vacío.
+    */
+    setAlertasSanitarias(
+      Array.isArray(respuesta.data) ? respuesta.data : []
+    );
+  } catch (error) {
+    console.error("Error cargando alertas sanitarias:", error);
+  } finally {
+    setCargandoAlertas(false);
+  }
+};
+
   useEffect(() => {
-    fetchStats();
-  }, []);
+  /*
+    Carga las estadísticas normales del Dashboard.
+  */
+  fetchStats();
+
+  /*
+    Carga las alertas sanitarias pendientes apenas entra al Dashboard.
+  */
+  cargarAlertasSanitarias();
+
+  /*
+    Cada 5 segundos vuelve a revisar si hay nuevas alertas sanitarias.
+    Esto hace que la alerta aparezca casi inmediatamente en el Dashboard.
+  */
+  const intervaloAlertas = setInterval(() => {
+    cargarAlertasSanitarias();
+  }, 5000);
+
+  /*
+    Cuando el usuario sale del Dashboard,
+    se limpia el intervalo para evitar consumo innecesario.
+  */
+  return () => clearInterval(intervaloAlertas);
+}, []);
+
+
+
+
 
   const fetchStats = async () => {
     setLoading(true);
@@ -132,7 +233,205 @@ function Dashboard() {
         }}
       >
         <Topbar titulo="Resumen de la Granja" subtitulo="Vista general de producción" sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        {alertasSanitarias.length > 0 && (
+  <div
+    style={{
+      background: "white",
+      borderRadius: "24px",
+      padding: "24px",
+      marginBottom: "24px",
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+      border: "1px solid #fed7aa",
+      borderLeft: "6px solid #f97316",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "16px",
+        marginBottom: "18px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            borderRadius: "16px",
+            background: "#ffedd5",
+            color: "#ea580c",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <ShieldAlert size={26} />
+        </div>
 
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "20px",
+              fontWeight: "800",
+              color: "#111827",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <AlertTriangle size={20} color="#f97316" />
+            Alerta sanitaria activa
+          </h2>
+
+          <p
+            style={{
+              margin: "6px 0 0",
+              color: "#64748b",
+              fontSize: "14px",
+            }}
+          >
+            El sistema detectó riesgo sanitario en uno o más lotes.
+          </p>
+        </div>
+      </div>
+
+      <span
+        style={{
+          background: "#fee2e2",
+          color: "#dc2626",
+          padding: "7px 13px",
+          borderRadius: "999px",
+          fontSize: "13px",
+          fontWeight: "800",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {alertasSanitarias.length} pendiente
+        {alertasSanitarias.length > 1 ? "s" : ""}
+      </span>
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        gap: "14px",
+      }}
+    >
+      {alertasSanitarias.slice(0, 3).map((alerta) => (
+        <div
+          key={alerta.id}
+          style={{
+            background: "#fff7ed",
+            border: "1px solid #fed7aa",
+            borderRadius: "16px",
+            padding: "14px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "10px",
+              marginBottom: "10px",
+            }}
+          >
+            <strong
+              style={{
+                color: "#111827",
+                fontSize: "14px",
+                lineHeight: "1.3",
+              }}
+            >
+              {alerta.titulo}
+            </strong>
+
+            <span
+              style={{
+                background: "#ffedd5",
+                color: "#c2410c",
+                padding: "4px 8px",
+                borderRadius: "999px",
+                fontSize: "11px",
+                fontWeight: "800",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {alerta.nivel}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "5px",
+              color: "#475569",
+              fontSize: "13px",
+            }}
+          >
+            <span>
+              <strong style={{ color: "#334155" }}>Lote:</strong>{" "}
+              {alerta.lote_codigo || "Sin lote"}
+            </span>
+
+            <span>
+              <strong style={{ color: "#334155" }}>Galpón:</strong>{" "}
+              {alerta.galpon_nombre || "No especificado"}
+            </span>
+
+            <span>
+              <strong style={{ color: "#334155" }}>Causa:</strong>{" "}
+              {alerta.causa || "No especificada"}
+            </span>
+
+            {alerta.porcentaje_afectado && (
+              <span>
+                <strong style={{ color: "#334155" }}>% afectado:</strong>{" "}
+                {alerta.porcentaje_afectado}%
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {alertasSanitarias.length > 3 && (
+      <p
+        style={{
+          margin: "14px 0 0",
+          color: "#92400e",
+          fontSize: "14px",
+          fontWeight: "700",
+        }}
+      >
+        Hay más alertas sanitarias pendientes por revisar.
+      </p>
+    )}
+
+    <button
+      type="button"
+      onClick={() => navigate("/sanitario/alertas")}
+      style={{
+        marginTop: "18px",
+        background: "#f97316",
+        color: "white",
+        border: "none",
+        borderRadius: "12px",
+        padding: "11px 16px",
+        fontWeight: "800",
+        cursor: "pointer",
+      }}
+    >
+      Ver alertas sanitarias
+    </button>
+  </div>
+)}
         <div
           style={{
             display: "grid",
@@ -215,3 +514,8 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+
+
+
+
